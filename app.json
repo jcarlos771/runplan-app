@@ -13,10 +13,16 @@
       "resizeMode": "contain",
       "backgroundColor": "#059669"
     },
+    "locales": {
+      "es": "./locales/es.json"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zonkmedia.runplan",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "es"
+      }
     },
     "android": {
       "adaptiveIcon": {

@@ -39,10 +39,10 @@ export const Colors = {
 export type WorkoutType = 'easy' | 'tempo' | 'intervals' | 'longRun' | 'rest' | 'cross';
 
 export const workoutTypeLabels: Record<WorkoutType, string> = {
-  easy: 'Easy Run',
+  easy: 'Carrera suave',
   tempo: 'Tempo',
-  intervals: 'Intervals',
-  longRun: 'Long Run',
-  rest: 'Rest',
-  cross: 'Cross-training',
+  intervals: 'Intervalos',
+  longRun: 'Tirada larga',
+  rest: 'Descanso',
+  cross: 'Entrenamiento cruzado',
 };

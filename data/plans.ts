@@ -5,7 +5,7 @@ function w(day: number, type: Workout['type'], title: string, description: strin
 }
 
 const rest = (day: number): Workout => w(day, 'rest', 'Descanso', 'Día de descanso activo. Estira y recupérate.');
-const cross = (day: number, dur: number): Workout => w(day, 'cross', 'Cross-training', `${dur} min de actividad cruzada: bici, natación o yoga.`, { duration: dur, intensity: 'low' });
+const cross = (day: number, dur: number): Workout => w(day, 'cross', 'Entrenamiento cruzado', `${dur} min de actividad cruzada: bici, natación o yoga.`, { duration: dur, intensity: 'low' });
 
 // ─── Couch to 5K (8 weeks) ──────────────────────────────────────
 const c25k: Week[] = Array.from({ length: 8 }, (_, i) => {
