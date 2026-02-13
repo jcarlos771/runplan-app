@@ -1,18 +1,25 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Animated } from 'react-native';
+import { useRef, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { trainingPlans } from '@/data/plans';
-import { Colors, workoutTypeLabels } from '@/constants/Colors';
+import { Colors, workoutTypeLabels, workoutTypeIcons, Spacing, Radius, Shadow } from '@/constants/Colors';
 import { useTheme } from '@/hooks/useColorScheme';
 import { usePlan } from '@/data/PlanContext';
 import { Workout } from '@/data/types';
 import * as Haptics from 'expo-haptics';
 
-function WorkoutRow({ workout, theme }: { workout: Workout; theme: any }) {
+function WorkoutRow({ workout, theme, index }: { workout: Workout; theme: any; index: number }) {
   const color = Colors.workout[workout.type];
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 300, delay: index * 40, useNativeDriver: true }).start();
+  }, []);
+
   return (
-    <View style={[styles.workoutRow, { borderLeftColor: color }]}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
+    <Animated.View style={[styles.workoutRow, { borderLeftColor: color, opacity: fadeAnim }]}>
+      <Text style={{ fontSize: 20 }}>{workoutTypeIcons[workout.type]}</Text>
       <View style={{ flex: 1 }}>
         <Text style={[styles.workoutTitle, { color: theme.text }]}>{workout.title}</Text>
         <Text style={[styles.workoutDesc, { color: theme.textSecondary }]}>{workout.description}</Text>
@@ -20,7 +27,7 @@ function WorkoutRow({ workout, theme }: { workout: Workout; theme: any }) {
       <Text style={[styles.workoutMeta, { color: theme.textSecondary }]}>
         {workout.distance ? `${workout.distance} km` : workout.duration ? `${workout.duration} min` : ''}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -58,30 +65,31 @@ export default function PlanDetailScreen() {
         <Text style={[styles.subtitle, { color: Colors.primary }]}>{plan.subtitle}</Text>
         <Text style={[styles.desc, { color: theme.textSecondary }]}>{plan.description}</Text>
         <View style={styles.meta}>
-          <View style={styles.metaItem}>
-            <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
+          <View style={[styles.metaItem, { backgroundColor: Colors.primary + '10' }, Shadow.sm]}>
+            <Ionicons name="calendar-outline" size={18} color={Colors.primary} />
             <Text style={[styles.metaText, { color: theme.text }]}>{plan.weeks} semanas</Text>
           </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={16} color={Colors.primary} />
+          <View style={[styles.metaItem, { backgroundColor: Colors.primary + '10' }, Shadow.sm]}>
+            <Ionicons name="time-outline" size={18} color={Colors.primary} />
             <Text style={[styles.metaText, { color: theme.text }]}>{plan.weeklyVolume}/sem</Text>
           </View>
         </View>
         <TouchableOpacity
           style={[styles.startBtn, isActive && styles.startBtnActive]}
+          activeOpacity={0.8}
           onPress={isActive ? undefined : handleStart}
           disabled={isActive}
         >
-          <Ionicons name={isActive ? 'checkmark-circle' : 'play'} size={20} color="#fff" />
+          <Ionicons name={isActive ? 'checkmark-circle' : 'play'} size={22} color="#fff" />
           <Text style={styles.startBtnText}>{isActive ? 'Plan activo' : 'Empezar plan'}</Text>
         </TouchableOpacity>
       </View>
 
       {plan.schedule.map((week) => (
-        <View key={week.weekNumber} style={[styles.weekCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View key={week.weekNumber} style={[styles.weekCard, { backgroundColor: theme.card, borderColor: theme.border }, Shadow.sm]}>
           <Text style={[styles.weekTitle, { color: theme.text }]}>{week.label}</Text>
           {week.workouts.map((w, i) => (
-            <WorkoutRow key={i} workout={w} theme={theme} />
+            <WorkoutRow key={i} workout={w} theme={theme} index={i} />
           ))}
         </View>
       ))}
@@ -93,21 +101,20 @@ export default function PlanDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { padding: 16, paddingBottom: 8 },
-  title: { fontSize: 28, fontWeight: '800' },
-  subtitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  desc: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
-  meta: { flexDirection: 'row', gap: 20, marginBottom: 16 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaText: { fontSize: 14, fontWeight: '500' },
-  startBtn: { backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12 },
+  header: { padding: Spacing.md, paddingBottom: Spacing.sm },
+  title: { fontSize: 30, fontWeight: '800' },
+  subtitle: { fontSize: 16, fontWeight: '600', marginBottom: Spacing.sm },
+  desc: { fontSize: 14, lineHeight: 21, marginBottom: Spacing.md },
+  meta: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radius.sm },
+  metaText: { fontSize: 14, fontWeight: '600' },
+  startBtn: { backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: Radius.md },
   startBtnActive: { backgroundColor: Colors.primaryLight, opacity: 0.7 },
-  startBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  weekCard: { marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 14, borderWidth: 1 },
-  weekTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
-  workoutRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderLeftWidth: 3, paddingLeft: 10, marginBottom: 4, gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  startBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  weekCard: { marginHorizontal: Spacing.md, marginBottom: Spacing.md, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1 },
+  weekTitle: { fontSize: 17, fontWeight: '700', marginBottom: Spacing.sm },
+  workoutRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderLeftWidth: 3, paddingLeft: 10, marginBottom: Spacing.xs, gap: 10 },
   workoutTitle: { fontSize: 14, fontWeight: '600' },
-  workoutDesc: { fontSize: 12 },
+  workoutDesc: { fontSize: 12, marginTop: 1 },
   workoutMeta: { fontSize: 12, fontWeight: '500' },
 });

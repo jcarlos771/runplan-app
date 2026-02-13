@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useState, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, workoutTypeLabels } from '@/constants/Colors';
+import { Colors, workoutTypeLabels, workoutTypeIcons, Spacing, Radius, Shadow } from '@/constants/Colors';
 import { useTheme } from '@/hooks/useColorScheme';
 import { usePlan } from '@/data/PlanContext';
 import { Workout } from '@/data/types';
@@ -21,17 +21,14 @@ export default function CalendarScreen() {
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  // Map plan dates to workouts
   const dateMap = useMemo(() => {
     if (!activePlan || !plan) return new Map<string, { workout: Workout; week: number }>();
     const map = new Map<string, { workout: Workout; week: number }>();
     const start = new Date(activePlan.startDate);
-    // Adjust start to Monday
     const startDay = start.getDay();
     const mondayOffset = startDay === 0 ? -6 : 1 - startDay;
     const monday = new Date(start);
     monday.setDate(monday.getDate() + mondayOffset);
-
     plan.schedule.forEach((week) => {
       week.workouts.forEach((wo) => {
         const d = new Date(monday);
@@ -44,8 +41,8 @@ export default function CalendarScreen() {
   }, [activePlan, plan]);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
-  const startOffset = firstDow === 0 ? 6 : firstDow - 1; // Monday-based
+  const firstDow = new Date(year, month, 1).getDay();
+  const startOffset = firstDow === 0 ? 6 : firstDow - 1;
 
   const cells: (number | null)[] = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);
@@ -54,9 +51,9 @@ export default function CalendarScreen() {
   if (!activePlan || !plan) {
     return (
       <View style={[styles.empty, { backgroundColor: theme.background }]}>
-        <Ionicons name="calendar-outline" size={64} color={theme.textSecondary} />
+        <Text style={{ fontSize: 64 }}>📅</Text>
         <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin plan activo</Text>
-        <Text style={[styles.emptyDesc, { color: theme.textSecondary }]}>Activa un plan para ver tu calendario</Text>
+        <Text style={[styles.emptyDesc, { color: theme.textSecondary }]}>Activa un plan para ver tu calendario de entrenamiento</Text>
       </View>
     );
   }
@@ -64,12 +61,12 @@ export default function CalendarScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.monthNav}>
-        <TouchableOpacity onPress={() => setMonthOffset(monthOffset - 1)}>
-          <Ionicons name="chevron-back" size={24} color={Colors.primary} />
+        <TouchableOpacity onPress={() => setMonthOffset(monthOffset - 1)} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={26} color={Colors.primary} />
         </TouchableOpacity>
         <Text style={[styles.monthTitle, { color: theme.text }]}>{monthNames[month]} {year}</Text>
-        <TouchableOpacity onPress={() => setMonthOffset(monthOffset + 1)}>
-          <Ionicons name="chevron-forward" size={24} color={Colors.primary} />
+        <TouchableOpacity onPress={() => setMonthOffset(monthOffset + 1)} activeOpacity={0.7}>
+          <Ionicons name="chevron-forward" size={26} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -91,12 +88,14 @@ export default function CalendarScreen() {
             <TouchableOpacity
               key={`d${day}`}
               style={[styles.cell, isToday && styles.todayCell]}
+              activeOpacity={0.7}
               onPress={entry ? () => setSelectedWorkout({ ...entry, done }) : undefined}
             >
-              <Text style={[styles.dayNum, { color: isToday ? Colors.primary : theme.text }]}>{day}</Text>
-              {color && (
+              <Text style={[styles.dayNum, { color: isToday ? Colors.primary : theme.text }, isToday && { fontWeight: '800' }]}>{day}</Text>
+              {entry && (
                 <View style={[styles.indicator, { backgroundColor: color }]}>
-                  {done && <Ionicons name="checkmark" size={8} color="#fff" />}
+                  {done ? <Ionicons name="checkmark" size={8} color="#fff" /> : 
+                   <Text style={{ fontSize: 8 }}>{workoutTypeIcons[entry.workout.type]}</Text>}
                 </View>
               )}
             </TouchableOpacity>
@@ -104,22 +103,21 @@ export default function CalendarScreen() {
         })}
       </View>
 
-      {/* Legend */}
       <View style={[styles.legend, { borderColor: theme.border }]}>
         {(['easy', 'tempo', 'intervals', 'longRun', 'rest', 'cross'] as const).map((type) => (
           <View key={type} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: Colors.workout[type] }]} />
+            <Text style={{ fontSize: 14 }}>{workoutTypeIcons[type]}</Text>
             <Text style={[styles.legendText, { color: theme.textSecondary }]}>{workoutTypeLabels[type]}</Text>
           </View>
         ))}
       </View>
 
-      {/* Detail modal */}
       <Modal visible={!!selectedWorkout} transparent animationType="fade" onRequestClose={() => setSelectedWorkout(null)}>
         <TouchableOpacity style={styles.modalBg} activeOpacity={1} onPress={() => setSelectedWorkout(null)}>
-          <View style={[styles.modalCard, { backgroundColor: theme.card }]}>
+          <View style={[styles.modalCard, { backgroundColor: theme.card }, Shadow.lg]}>
             {selectedWorkout && (
               <>
+                <Text style={{ fontSize: 40, textAlign: 'center' }}>{workoutTypeIcons[selectedWorkout.workout.type]}</Text>
                 <View style={[styles.modalBadge, { backgroundColor: Colors.workout[selectedWorkout.workout.type] + '20' }]}>
                   <Text style={{ color: Colors.workout[selectedWorkout.workout.type], fontWeight: '700' }}>
                     {workoutTypeLabels[selectedWorkout.workout.type]}
@@ -131,8 +129,8 @@ export default function CalendarScreen() {
                 {selectedWorkout.workout.duration && <Text style={[styles.modalMeta, { color: theme.text }]}>⏱ {selectedWorkout.workout.duration} min</Text>}
                 {selectedWorkout.done && (
                   <View style={styles.modalDone}>
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-                    <Text style={{ color: Colors.primary, fontWeight: '600' }}>Completado</Text>
+                    <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />
+                    <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 15 }}>Completado</Text>
                   </View>
                 )}
               </>
@@ -146,27 +144,26 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emptyTitle: { fontSize: 22, fontWeight: '700', marginTop: 16 },
-  emptyDesc: { fontSize: 15, textAlign: 'center', marginTop: 8 },
-  monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-  monthTitle: { fontSize: 20, fontWeight: '700' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 8 },
-  headerCell: { width: '14.28%', alignItems: 'center', paddingVertical: 8 },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
+  emptyTitle: { fontSize: 24, fontWeight: '800', marginTop: Spacing.md },
+  emptyDesc: { fontSize: 15, textAlign: 'center', marginTop: Spacing.sm },
+  monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.md },
+  monthTitle: { fontSize: 22, fontWeight: '800' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.sm },
+  headerCell: { width: '14.28%', alignItems: 'center', paddingVertical: Spacing.sm },
   headerText: { fontSize: 12, fontWeight: '700' },
-  cell: { width: '14.28%', height: 56, alignItems: 'center', justifyContent: 'center' },
-  todayCell: { backgroundColor: 'rgba(5,150,105,0.1)', borderRadius: 12 },
+  cell: { width: '14.28%', height: 60, alignItems: 'center', justifyContent: 'center' },
+  todayCell: { backgroundColor: 'rgba(5,150,105,0.1)', borderRadius: Radius.md },
   dayNum: { fontSize: 14, fontWeight: '500' },
-  indicator: { width: 14, height: 14, borderRadius: 7, marginTop: 2, alignItems: 'center', justifyContent: 'center' },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, padding: 16, marginTop: 8, borderTopWidth: 1 },
+  indicator: { width: 16, height: 16, borderRadius: 8, marginTop: 2, alignItems: 'center', justifyContent: 'center' },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, padding: Spacing.md, marginTop: Spacing.sm, borderTopWidth: 1 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendText: { fontSize: 11 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  modalCard: { width: '80%', borderRadius: 16, padding: 24 },
-  modalBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, marginBottom: 8 },
-  modalTitle: { fontSize: 22, fontWeight: '700' },
-  modalDesc: { fontSize: 14, marginTop: 8, lineHeight: 20 },
-  modalMeta: { fontSize: 14, marginTop: 6, fontWeight: '500' },
-  modalDone: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalCard: { width: '85%', borderRadius: Radius.xl, padding: Spacing.lg },
+  modalBadge: { alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 6, borderRadius: Radius.sm, marginTop: Spacing.sm, marginBottom: Spacing.sm },
+  modalTitle: { fontSize: 24, fontWeight: '800', textAlign: 'center' },
+  modalDesc: { fontSize: 14, marginTop: Spacing.sm, lineHeight: 21, textAlign: 'center' },
+  modalMeta: { fontSize: 15, marginTop: 6, fontWeight: '500', textAlign: 'center' },
+  modalDone: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.md, justifyContent: 'center' },
 });
